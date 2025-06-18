@@ -1,0 +1,267 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Play, Pause, RotateCcw, Settings, TrendingUp, TrendingDown, AlertTriangle, Zap, Shield, Bomb, LogOut, User, HelpCircle, BookOpen, ArrowLeft, ExternalLink } from 'lucide-react';
+
+declare global {
+  interface Window {
+    netlifyIdentity: any;
+  }
+}
+
+import netlifyIdentity from 'netlify-identity-widget';
+
+interface Scenario {
+  id: number;
+  name: string;
+  currentLevel: number;
+  baseSize: number;
+  totalExposure: number;
+  isActive: boolean;
+  direction: 'long' | 'short';
+  entryPrice: number;
+  currentPrice: number;
+  pnl: number;
+  marginalCall: boolean;
+  coordinated: boolean;
+  whaleClient: boolean;
+}
+
+interface Alert {
+  id: number;
+  type: 'danger' | 'warning' | 'info';
+  message: string;
+  timestamp: string;
+}
+
+interface ChartDataPoint {
+  step: number;
+  price: number;
+  brokerPnL: number;
+  exposure: number;
+  hedgingCost: number;
+}
+
+const PROTECTION_LEVELS = {
+  1: { 
+    name: 'Minimal Protection',
+    interventionLevel: 7,
+    hedgeRatio: 0.3,
+    hedgeStartLevel: 5,
+    maxClientExposure: 1000000,
+    description: 'High risk, high reward'
+  },
+  2: { 
+    name: 'Low Protection',
+    interventionLevel: 6,
+    hedgeRatio: 0.5,
+    hedgeStartLevel: 4,
+    maxClientExposure: 750000,
+    description: 'Moderate risk tolerance'
+  },
+  3: { 
+    name: 'Balanced Protection',
+    interventionLevel: 5,
+    hedgeRatio: 0.7,
+    hedgeStartLevel: 3,
+    maxClientExposure: 500000,
+    description: 'Balanced approach'
+  },
+  4: { 
+    name: 'High Protection', 
+    interventionLevel: 4,
+    hedgeRatio: 0.85,
+    hedgeStartLevel: 3,
+    maxClientExposure: 300000,
+    description: 'Conservative risk management'
+  },
+  5: { 
+    name: 'Maximum Protection',
+    interventionLevel: 3,
+    hedgeRatio: 0.95,
+    hedgeStartLevel: 2,
+    maxClientExposure: 200000,
+    description: 'Ultra-conservative, maximum safety'
+  }
+};
+
+const HELP_SECTIONS = {
+  overview: {
+    title: 'Martingale War Room Overview',
+    content: 'The Martingale War Room is a comprehensive risk management simulation for B-book brokers. It helps manage the unique risks posed by martingale trading strategies through real-time monitoring, advanced hedging, and stress testing.'
+  },
+  protection: {
+    title: 'Protection Level System',
+    content: 'The 5-level protection system ranges from Level 1 (Minimal) to Level 5 (Maximum). Level 3 (Balanced) is recommended for most operations, providing optimal risk-return balance.'
+  },
+  stress: {
+    title: 'Stress Testing Scenarios',
+    content: 'Three main scenarios: Black Swan (market gaps + crisis), Whale Attack (coordinated large accounts), and Perfect Storm (maximum chaos conditions).'
+  },
+  hedging: {
+    title: 'Hedging Strategies',
+    content: 'Advanced options-based hedging including dynamic put/call strategies, collar strategies, and synthetic positions to protect against martingale risks.'
+  },
+  metrics: {
+    title: 'Key Performance Indicators',
+    content: 'Monitor Net P&L, Total Exposure, Capital Utilization, Hedging Costs, and Client Threat Levels for comprehensive risk assessment.'
+  },
+  martingale: {
+    title: 'Martingale Strategies',
+    content: 'Understanding exponential position sizing (2^n formula), risk progression, and detection of coordinated attacks by professional trading groups.'
+  }
+};
+
+const HelpButton: React.FC<{ section: string; className?: string }> = ({ section, className = "" }) => {
+  const handleClick = () => {
+    const helpContent = HELP_SECTIONS[section as keyof typeof HELP_SECTIONS];
+    if (helpContent) {
+      alert(` ${helpContent.title}\n\n${helpContent.content}\n\n This is a preview - full help system includes detailed examples, formulas, and best practices!`);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`flex items-center justify-center w-6 h-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors ${className}`}
+      title={`Get help for ${section}`}
+    >
+      <HelpCircle className="w-4 h-4" />
+    </button>
+  );
+};
+
+const HelpDocumentation: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  return (
+    <div className="min-h-screen bg-gray-900 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-gray-800 rounded-lg shadow-2xl p-6 border border-blue-500">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-3">
+              <BookOpen className="w-8 h-8 text-blue-500" />
+              <h1 className="text-3xl font-bold text-blue-400">WAR ROOM DOCUMENTATION</h1>
+            </div>
+            <button
+              onClick={onBack}
+              className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to War Room
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Object.entries(HELP_SECTIONS).map(([key, section]) => (
+              <div 
+                key={key}
+                className="bg-gradient-to-r from-blue-900 to-blue-800 p-6 rounded-lg border border-blue-600 cursor-pointer hover:from-blue-800 hover:to-blue-700 transition-all"
+                onClick={() => alert(` ${section.title}\n\n${section.content}\n\n Full version includes detailed examples, mathematical formulas, implementation guides, and real-world case studies!`)}
+              >
+                <h3 className="text-xl font-bold text-blue-300 mb-4">{section.title}</h3>
+                <p className="text-gray-300 text-sm mb-4">{section.content.substring(0, 120)}...</p>
+                <div className="flex items-center text-blue-400 text-sm">
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Read Documentation
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 bg-gray-700 rounded-lg p-6 border border-gray-600">
+            <h2 className="text-2xl font-bold text-white mb-4"> Quick Start Guide</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-bold text-blue-400 mb-3">For New Users</h3>
+                <ol className="space-y-2 text-gray-300 text-sm">
+                  <li>1. Start with <strong>Protection Level 3</strong> (balanced approach)</li>
+                  <li>2. Enable <strong>hedging system</strong> with 70% ratio</li>
+                  <li>3. Run <strong>Perfect Storm</strong> stress test</li>
+                  <li>4. Monitor <strong>client threat levels</strong> in real-time</li>
+                  <li>5. Review <strong>P&L vs hedging costs</strong> regularly</li>
+                </ol>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-green-400 mb-3">Best Practices</h3>
+                <ul className="space-y-2 text-gray-300 text-sm">
+                  <li> <strong>Daily monitoring:</strong> Check exposure levels each morning</li>
+                  <li> <strong>Weekly stress tests:</strong> Run scenarios every Friday</li>
+                  <li> <strong>Monthly reviews:</strong> Analyze protection level effectiveness</li>
+                  <li> <strong>Emergency protocols:</strong> Have intervention procedures ready</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const LoginScreen: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = () => {
+    setIsLoading(true);
+    netlifyIdentity.open();
+  };
+
+  useEffect(() => {
+    const handleAuth = () => {
+      setIsLoading(false);
+    };
+
+    netlifyIdentity.on('login', handleAuth);
+    netlifyIdentity.on('error', handleAuth);
+
+    return () => {
+      netlifyIdentity.off('login', handleAuth);
+      netlifyIdentity.off('error', handleAuth);
+    };
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-6">
+      <div className="bg-gray-800 rounded-lg shadow-2xl p-8 max-w-md w-full border border-red-500">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-3 mb-4">
+            <Bomb className="w-12 h-12 text-red-500" />
+            <Shield className="w-12 h-12 text-blue-500" />
+          </div>
+          <h1 className="text-3xl font-bold text-red-400 mb-2">MARTINGALE WAR ROOM</h1>
+          <p className="text-gray-300 text-sm"> RESTRICTED ACCESS</p>
+        </div>
+        
+        <div className="bg-red-950 border border-red-600 rounded-lg p-4 mb-6">
+          <h3 className="text-red-300 font-bold mb-2"> AUTHORIZED PERSONNEL ONLY</h3>
+          <p className="text-gray-300 text-sm">
+            This is a classified risk management simulation system. 
+            Access is restricted to authorized personnel only.
+          </p>
+        </div>
+
+        <button
+          onClick={handleLogin}
+          disabled={isLoading}
+          className={`w-full flex items-center justify-center px-4 py-3 rounded-lg font-medium transition-colors ${
+            isLoading 
+              ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
+              : 'bg-red-600 hover:bg-red-700 text-white'
+          }`}
+        >
+          {isLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Authenticating...
+            </>
+          ) : (
+            <>
+              <User className="w-4 h-4 mr-2" />
+              ACCESS WAR ROOM
+            </>
+          )}
+        </button>
+        
+        <p className="text-gray-400 text-xs text-center mt-4">
+          Only authorized email addresses can access this system.
+        </p>
+      </div>
+    </div>
+  );
+};

@@ -1,0 +1,24 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Play, Pause, RotateCcw, Settings, TrendingUp, TrendingDown, AlertTriangle, Zap, Shield, Bomb, LogOut, User, HelpCircle, BookOpen, ArrowLeft } from 'lucide-react';
+
+// Add these help handler functions at the top of your component
+const handleHelpClick = (section: string) => {
+  alert(`Help for ${section}:\n\nThis would open detailed help documentation for the ${section} section.\n\nIn the full version, this opens a modal with comprehensive explanations, examples, and best practices.`);
+};
+
+const handleShowDocumentation = () => {
+  alert(" COMPLETE HELP SYSTEM\n\nThis would open the full documentation center with:\n\n System Overview & Getting Started\n Martingale Strategy Deep Dive\n 5-Level Protection System Guide\n Advanced Hedging Strategies\n Stress Testing Scenarios\n Analytics & KPIs Framework\n\nClick the blue help circles () throughout the interface for contextual help!");
+};
+
+// Your existing component code continues here...
+// Just add these two lines at the top of your component function:
+
+const MartingaleWarRoomSimulator: React.FC = () => {
+  // ... your existing state variables ...
+  
+  // ADD THESE HELP FUNCTIONS
+  const showHelp = () => handleShowDocumentation();
+  const helpClick = (section: string) => handleHelpClick(section);
+
+  // ... rest of your component code ...
