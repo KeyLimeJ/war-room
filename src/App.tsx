@@ -119,11 +119,11 @@ const LoginScreen: React.FC = () => {
             <Shield className="w-12 h-12 text-blue-500" />
           </div>
           <h1 className="text-3xl font-bold text-red-400 mb-2">MARTINGALE WAR ROOM</h1>
-          <p className="text-gray-300 text-sm">?? RESTRICTED ACCESS</p>
+          <p className="text-gray-300 text-sm"> RESTRICTED ACCESS</p>
         </div>
         
         <div className="bg-red-950 border border-red-600 rounded-lg p-4 mb-6">
-          <h3 className="text-red-300 font-bold mb-2">?? AUTHORIZED PERSONNEL ONLY</h3>
+          <h3 className="text-red-300 font-bold mb-2"> AUTHORIZED PERSONNEL ONLY</h3>
           <p className="text-gray-300 text-sm">
             This is a classified risk management simulation system. 
             Access is restricted to authorized personnel only.
@@ -241,7 +241,7 @@ const MartingaleWarRoomSimulator: React.FC = () => {
     setMaxClientExposure(settings.maxClientExposure);
     setProtectionLevel(level);
     
-    addAlert('info', `??? Applied ${settings.name} - ${settings.description}`);
+    addAlert('info', ` Applied ${settings.name} - ${settings.description}`);
   };
 
   // Add alert
@@ -291,7 +291,7 @@ const MartingaleWarRoomSimulator: React.FC = () => {
     
     if (gapEventTrigger && Math.random() > 0.98) {
       priceChange = (Math.random() > 0.5 ? 1 : -1) * 0.0200;
-      addAlert('danger', `?? MARKET GAP: 200 pips!`);
+      addAlert('danger', ` MARKET GAP: 200 pips!`);
       setGapEventTrigger(false);
     } else {
       const currentVol = crisisVolatility ? volatility * 3 : volatility;
@@ -335,7 +335,7 @@ const MartingaleWarRoomSimulator: React.FC = () => {
     return exposure * basePremium * strategyMultiplier * levelMultiplier * hedgeRatio * 0.002;
   };
 
-  // Simulation step (simplified for space)
+  // Simulation step
   const simulationStep = useCallback(() => {
     if (scenarios.length === 0) return;
     
@@ -345,7 +345,6 @@ const MartingaleWarRoomSimulator: React.FC = () => {
     let totalHedgingCost = hedgingCost;
     let totalExposureAmount = 0;
     
-    // [Simulation logic - same as before but shortened for space]
     const updatedScenarios = scenarios.map(scenario => {
       if (!scenario.isActive || scenario.marginalCall) return scenario;
       
@@ -379,7 +378,7 @@ const MartingaleWarRoomSimulator: React.FC = () => {
         totalBrokerPnL -= actualLoss;
         
         if (scenario.currentLevel >= 5) {
-          addAlert('danger', `${scenario.name}: HIGH LEVEL WIN - Loss $${Math.round(actualLoss/1000)}k`);
+          addAlert('danger', `${scenario.name}: HIGH LEVEL WIN - Loss $${Math.round(actualLoss/1000)}k (Hedged: $${Math.round(hedgeProtection/1000)}k)`);
         }
         
         updatedScenario = {
@@ -402,7 +401,7 @@ const MartingaleWarRoomSimulator: React.FC = () => {
           const newLevel = scenario.currentLevel + 1;
           
           if (newLevel >= 6) {
-            addAlert('warning', `${scenario.name}: ?? CRITICAL LEVEL ${newLevel}`);
+            addAlert('warning', `${scenario.name}:  CRITICAL LEVEL ${newLevel}`);
           }
           
           updatedScenario = {
@@ -429,7 +428,7 @@ const MartingaleWarRoomSimulator: React.FC = () => {
     
     const netPnL = totalBrokerPnL - totalHedgingCost;
     if (Math.abs(netPnL) > capitalLimit * 0.8) {
-      addAlert('danger', `?? CAPITAL WARNING: ${Math.round((Math.abs(netPnL) / capitalLimit) * 100)}% of limit`);
+      addAlert('danger', ` CAPITAL WARNING: ${Math.round((Math.abs(netPnL) / capitalLimit) * 100)}% of limit`);
     }
     
     setScenarios(updatedScenarios);
@@ -488,7 +487,7 @@ const MartingaleWarRoomSimulator: React.FC = () => {
         setCoordinated(true);
         break;
     }
-    addAlert('info', `?? Loaded ${scenarioType.replace('_', ' ')} scenario`);
+    addAlert('info', ` Loaded ${scenarioType.replace('_', ' ')} scenario`);
     setTimeout(initializeScenarios, 100);
   };
 
@@ -577,26 +576,289 @@ const MartingaleWarRoomSimulator: React.FC = () => {
           </div>
         </div>
 
-        {/* Add a simplified version of the full War Room interface here */}
-        <div className="text-center py-20">
-          <h2 className="text-4xl font-bold text-green-400 mb-4">?? WAR ROOM OPERATIONAL</h2>
-          <p className="text-gray-300 text-lg mb-8">
-            Full simulation interface loaded successfully!<br/>
-            Protected by Netlify Identity authentication.
-          </p>
+        {/* PROTECTION LEVEL SELECTOR */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-900 to-purple-900 rounded-lg border border-blue-500">
+          <h3 className="text-lg font-bold text-blue-300 mb-3"> PROTECTION LEVEL SYSTEM</h3>
+          <div className="grid grid-cols-5 gap-2 mb-4">
+            {[1, 2, 3, 4, 5].map(level => {
+              const settings = PROTECTION_LEVELS[level as keyof typeof PROTECTION_LEVELS];
+              return (
+                <button
+                  key={level}
+                  onClick={() => applyProtectionLevel(level)}
+                  className={`p-3 rounded-lg text-center transition-all ${
+                    protectionLevel === level 
+                      ? 'bg-blue-600 text-white border-2 border-blue-400' 
+                      : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600'
+                  }`}
+                >
+                  <div className="font-bold text-lg">LEVEL {level}</div>
+                  <div className="text-xs">{settings.name}</div>
+                  <div className="text-xs mt-1 opacity-75">{settings.description}</div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="text-sm text-blue-200">
+            <strong>Current:</strong> {currentProtection.name} | 
+            <strong> Intervention:</strong> Level {interventionLevel} | 
+            <strong> Hedge Ratio:</strong> {(hedgeRatio * 100).toFixed(0)}% | 
+            <strong> Max Exposure:</strong> ${(maxClientExposure/1000).toFixed(0)}k
+          </div>
+        </div>
+
+        {/* Stress Test Arsenal */}
+        <div className="mb-6 p-4 bg-gray-700 rounded-lg border border-yellow-500">
+          <h3 className="text-lg font-bold text-yellow-400 mb-3"> STRESS TEST ARSENAL</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button
+              onClick={() => loadStressScenario('black_swan')}
+              className="p-3 bg-gray-600 hover:bg-red-600 rounded-lg text-left transition-colors border border-gray-500"
+            >
+              <div className="font-semibold text-sm text-red-300"> Black Swan Event</div>
+              <div className="text-xs text-gray-300">Market gap + crisis volatility + coordination</div>
+            </button>
+            <button
+              onClick={() => loadStressScenario('whale_attack')}
+              className="p-3 bg-gray-600 hover:bg-blue-600 rounded-lg text-left transition-colors border border-gray-500"
+            >
+              <div className="font-semibold text-sm text-blue-300"> Whale Attack</div>
+              <div className="text-xs text-gray-300">Multiple coordinated $100k+ accounts</div>
+            </button>
+            <button
+              onClick={() => loadStressScenario('perfect_storm')}
+              className="p-3 bg-gray-600 hover:bg-purple-600 rounded-lg text-left transition-colors border border-gray-500"
+            >
+              <div className="font-semibold text-sm text-purple-300"> Perfect Storm</div>
+              <div className="text-xs text-gray-300">Extreme volatility + forced wins + coordination</div>
+            </button>
+          </div>
+        </div>
+
+        {/* Key Metrics Dashboard */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-lg border border-blue-400">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-200 text-xs">MARKET PRICE</p>
+                <p className="text-xl font-bold">{marketPrice.toFixed(4)}</p>
+              </div>
+              <TrendingUp className="w-6 h-6 text-blue-300" />
+            </div>
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-green-900 p-4 rounded-lg border border-green-600">
-              <h3 className="text-green-300 font-bold mb-2">? AUTHENTICATION</h3>
-              <p className="text-gray-300 text-sm">Secured with email whitelist</p>
+          <div className={`${netPnL >= 0 ? 'bg-gradient-to-r from-green-600 to-green-700' : 'bg-gradient-to-r from-red-600 to-red-700'} text-white p-4 rounded-lg border ${netPnL >= 0 ? 'border-green-400' : 'border-red-400'}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white text-xs opacity-90">NET P&L</p>
+                <p className="text-xl font-bold">${Math.round(netPnL/1000)}k</p>
+              </div>
+              {netPnL >= 0 ? <TrendingUp className="w-6 h-6 opacity-90" /> : <TrendingDown className="w-6 h-6 opacity-90" />}
             </div>
-            <div className="bg-blue-900 p-4 rounded-lg border border-blue-600">
-              <h3 className="text-blue-300 font-bold mb-2">?? DEPLOYMENT</h3>
-              <p className="text-gray-300 text-sm">Ready for Netlify hosting</p>
+          </div>
+          
+          <div className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-4 rounded-lg border border-orange-400">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-200 text-xs">TOTAL EXPOSURE</p>
+                <p className="text-xl font-bold">${Math.round(totalExposure/1000)}k</p>
+                <p className="text-xs text-orange-200">{(totalExposure/capitalLimit * 100).toFixed(1)}% of capital</p>
+              </div>
+              <AlertTriangle className="w-6 h-6 text-orange-300" />
             </div>
-            <div className="bg-purple-900 p-4 rounded-lg border border-purple-600">
-              <h3 className="text-purple-300 font-bold mb-2">??? PROTECTION</h3>
-              <p className="text-gray-300 text-sm">5-level risk management</p>
+          </div>
+          
+          <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 rounded-lg border border-purple-400">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-200 text-xs">HEDGE COST</p>
+                <p className="text-xl font-bold">${Math.round(hedgingCost/1000)}k</p>
+                <p className="text-xs text-purple-200">{hedgingCost > 0 ? `${(hedgeRatio * 100).toFixed(0)}% ratio` : 'No hedging'}</p>
+              </div>
+              <Settings className="w-6 h-6 text-purple-300" />
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-r from-gray-600 to-gray-700 text-white p-4 rounded-lg border border-gray-400">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-200 text-xs">ACTIVE CLIENTS</p>
+                <p className="text-xl font-bold">{activeClients.length}</p>
+                <p className="text-xs text-gray-300">{scenarios.filter(s => s.currentLevel >= 5).length} critical</p>
+              </div>
+              <div className="text-2xl"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Alerts */}
+        {alerts.length > 0 && (
+          <div className="mb-6 bg-black rounded-lg border border-red-500 p-4">
+            <h3 className="text-red-400 font-bold mb-3 flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2" />
+               LIVE THREAT ASSESSMENT
+            </h3>
+            <div className="max-h-32 overflow-y-auto space-y-1">
+              {alerts.slice(0, 5).map(alert => (
+                <div
+                  key={alert.id}
+                  className={`text-xs p-2 rounded flex justify-between ${
+                    alert.type === 'danger' ? 'bg-red-900 text-red-200 border-l-4 border-red-600' :
+                    alert.type === 'warning' ? 'bg-yellow-900 text-yellow-200 border-l-4 border-yellow-600' :
+                    'bg-blue-900 text-blue-200 border-l-4 border-blue-600'
+                  }`}
+                >
+                  <span>{alert.message}</span>
+                  <span className="text-gray-400">{alert.timestamp}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-gray-800 p-4 border border-gray-600 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4 text-red-400"> BROKER P&L vs HEDGING COST</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="step" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip 
+                  formatter={(value: any, name: string) => {
+                    if (name === 'brokerPnL') return [`${Math.round(Number(value)/1000)}k`, 'Net P&L'];
+                    if (name === 'hedgingCost') return [`${Math.round(Number(value)/1000)}k`, 'Hedge Cost'];
+                    return [value, name];
+                  }}
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#ffffff' }}
+                />
+                <Line type="monotone" dataKey="brokerPnL" stroke="#EF4444" strokeWidth={2} name="brokerPnL" />
+                <Line type="monotone" dataKey="hedgingCost" stroke="#8B5CF6" strokeWidth={2} name="hedgingCost" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <div className="bg-gray-800 p-4 border border-gray-600 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4 text-blue-400"> MARKET PRICE MOVEMENT</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="step" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip 
+                  formatter={(value: any) => [Number(value).toFixed(4), 'Price']} 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', color: '#ffffff' }}
+                />
+                <Line type="monotone" dataKey="price" stroke="#3B82F6" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Client Status Table */}
+        <div className="bg-gray-800 border border-gray-600 rounded-lg overflow-hidden">
+          <div className="px-6 py-4 bg-gray-700 border-b border-gray-600">
+            <h3 className="text-lg font-semibold text-red-400"> CLIENT COMBAT STATUS</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Client</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Threat Level</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Exposure</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">P&L</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Direction</th>
+                </tr>
+              </thead>
+              <tbody className="bg-gray-800 divide-y divide-gray-700">
+                {scenarios.slice(0, 10).map((scenario) => {
+                  const threatLevel = scenario.currentLevel >= 6 ? 'CRITICAL' : 
+                                    scenario.currentLevel >= 4 ? 'HIGH' : 
+                                    scenario.currentLevel >= 3 ? 'MEDIUM' : 'LOW';
+                  const threatColor = scenario.currentLevel >= 6 ? 'text-red-400' : 
+                                    scenario.currentLevel >= 4 ? 'text-orange-400' : 
+                                    scenario.currentLevel >= 3 ? 'text-yellow-400' : 'text-green-400';
+                  
+                  return (
+                    <tr key={scenario.id} className={scenario.isActive ? '' : 'bg-gray-700 opacity-60'}>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">
+                        {scenario.name}
+                        {scenario.whaleClient && <span className="ml-1 text-blue-400"></span>}
+                        {scenario.coordinated && <span className="ml-1 text-red-400"></span>}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          scenario.marginalCall 
+                            ? 'bg-red-900 text-red-300 border border-red-600' 
+                            : scenario.isActive 
+                            ? 'bg-green-900 text-green-300 border border-green-600' 
+                            : 'bg-gray-700 text-gray-300 border border-gray-600'
+                        }`}>
+                          {scenario.marginalCall ? 'KIA' : scenario.isActive ? 'ACTIVE' : 'INACTIVE'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`text-sm font-bold ${threatColor}`}>
+                          LVL {scenario.currentLevel} - {threatLevel}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
+                        ${Math.round(scenario.totalExposure/1000)}k
+                      </td>
+                      <td className={`px-4 py-3 whitespace-nowrap text-sm font-medium ${
+                        scenario.pnl >= 0 ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        ${Math.round(scenario.pnl/1000)}k
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          scenario.direction === 'long' ? 'bg-blue-900 text-blue-300' : 'bg-orange-900 text-orange-300'
+                        }`}>
+                          {scenario.direction.toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* War Room Intelligence Summary */}
+        <div className="mt-6 bg-red-950 border border-red-500 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-red-400 mb-3 flex items-center">
+            <Shield className="w-5 h-5 mr-2" />
+             BATTLEFIELD INTELLIGENCE
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="bg-red-900 p-3 rounded border border-red-600">
+              <strong className="text-red-300">THREAT ASSESSMENT:</strong> 
+              <p className="text-gray-300 mt-1">
+                {scenarios.filter(s => s.currentLevel >= 6).length} clients at critical levels (6+).
+                Capital utilization: {(capitalUtilization * 100).toFixed(1)}%.
+                {capitalUtilization > 0.5 && "  HIGH RISK"}
+              </p>
+            </div>
+            <div className="bg-blue-900 p-3 rounded border border-blue-600">
+              <strong className="text-blue-300">HEDGING STATUS:</strong>
+              <p className="text-gray-300 mt-1">
+                System {hedgingEnabled ? 'ONLINE' : 'OFFLINE'}.
+                Strategy: {hedgeStrategy.toUpperCase()}.
+                Ratio: {(hedgeRatio * 100).toFixed(0)}%.
+                {hedgingCost > 0 ? ` Cost: ${(hedgingCost/1000).toFixed(0)}k` : ' No costs yet'}
+              </p>
+            </div>
+            <div className="bg-yellow-900 p-3 rounded border border-yellow-600">
+              <strong className="text-yellow-300">PROTECTION LEVEL:</strong>
+              <p className="text-gray-300 mt-1">
+                {currentProtection.name} active.
+                Intervention at Level {interventionLevel}.
+                Max exposure: ${(maxClientExposure/1000).toFixed(0)}k.
+              </p>
             </div>
           </div>
         </div>
